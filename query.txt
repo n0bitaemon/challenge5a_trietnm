@@ -1,0 +1,73 @@
+CREATE DATABASE classroom;
+USE classroom;
+
+CREATE TABLE account(
+	id INT NOT NULL AUTO_INCREMENT,
+	username varchar(255) NOT NULL UNIQUE,
+	password varchar(255) NOT NULL,
+	fullname varchar(255) NOT NULL,
+	avatar varchar(255) NOT NULL,
+	email varchar(255) NOT NULL UNIQUE,
+	phone varchar(11) NOT NULL UNIQUE,
+	is_teacher boolean NOT NULL DEFAULT 0,
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE quiz(
+	id INT NOT NULL AUTO_INCREMENT,
+	title varchar(255) NOT NULL,
+	description varchar(255),
+	answer varchar(255) NOT NULL,
+	file varchar(255) NOT NULL,
+	creator INT NOT NULL,
+	create_date DATE NOT NULL DEFAULT CURRENT_DATE(),
+	update_date DATE NOT NULL DEFAULT CURRENT_DATE(),
+	PRIMARY KEY(id),
+	FOREIGN KEY(creator) REFERENCES account(id)
+);
+
+CREATE TABLE exercise(
+	id INT NOT NULL AUTO_INCREMENT,
+	title varchar(255) NOT NULL,
+	description varchar(255),
+	file varchar(255) NOT NULL,
+	creator INT NOT NULL,
+	create_date DATE NOT NULL DEFAULT CURRENT_DATE(),
+	update_date DATE NOT NULL DEFAULT CURRENT_DATE(),
+	PRIMARY KEY(id),
+	FOREIGN KEY(creator) REFERENCES account(id)
+);
+
+CREATE TABLE quiz_ans(
+	id INT NOT NULL AUTO_INCREMENT,
+	quiz_id INT NOT NULL,
+	user_id INT NOT NULL,
+	answer varchar(255) NOT NULL,
+	PRIMARY KEY(id),
+	FOREIGN KEY(quiz_id) REFERENCES quiz(id),
+	FOREIGN KEY(user_id) REFERENCES account(id)
+);
+
+CREATE TABLE exercise_ans(
+	id INT NOT NULL AUTO_INCREMENT,
+	exercise_id INT NOT NULL,
+	user_id INT NOT NULL,
+	ans_file varchar(255) NOT NULL,
+	PRIMARY KEY(id),
+	FOREIGN KEY(exercise_id) REFERENCES exercise(id),
+	FOREIGN KEY(user_id) REFERENCES account(id)
+);
+
+CREATE TABLE message(
+	id INT NOT NULL AUTO_INCREMENT,
+	from_id INT NOT NULL,
+	to_id INT NOT NULL,
+	content TEXT NOT NULL,
+	is_seen BOOLEAN NOT NULL DEFAULT 0,
+	create_date DATE NOT NULL DEFAULT CURRENT_DATE(),
+	PRIMARY KEY(id),
+	FOREIGN KEY(from_id) REFERENCES account(id),
+	FOREIGN KEY(to_id) REFERENCES account(id)
+);
+
+

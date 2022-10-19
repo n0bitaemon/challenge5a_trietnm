@@ -1,5 +1,5 @@
 <?php
-require_once("db/exec_query.php");
+require_once("utils/exec_query.php");
 session_start();
 if($_SERVER["REQUEST_METHOD"] == "POST"){
 	$username = $_POST["username"];
@@ -10,6 +10,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 	if($user === -1){
 		$error = "Wrong username or password";
 	}else{
+		$user_sess = array();
+		$user_sess["id"] = $user["id"];
+		$user_sess["is_teacher"] = $user["is_teacher"];
+		$_SESSION["user"] = $user_sess;
 		die(header("Location: index.php"));
 	}
 }
