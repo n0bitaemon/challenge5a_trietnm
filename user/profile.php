@@ -28,10 +28,9 @@ if(isset($_POST["send_msg"]) && !empty($_POST["message"])){
 	//Send message
 	$message = $_POST["message"];
 	$msgService->sendMessage($user_sess["id"], $id, $message);
+	die(header("Location: /message/messages.php?to=$id"));
 }
 
-//Get all messages
-$msgList = $msgService->getAllMessagesToUser($user_sess["id"], $id);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -60,23 +59,7 @@ $msgList = $msgService->getAllMessagesToUser($user_sess["id"], $id);
 			<textarea name="message" cols="30" rows="10"></textarea><br/>
 			<input type="submit" name="send_msg" value="Gửi tin nhắn">
 		</form>
-		<h1>Các tin nhắn đã gửi</h1>
-		<table>
-			<tr>
-				<th>Nội dung</th>
-				<th>Ngày gửi</th>
-				<th>Hành động</th>
-			</tr>
-			<?php
-			foreach($msgList as $msg){
-				echo "<tr>";
-				echo "<td>".$msg["content"]."</td>";
-				echo "<td>".$msg["create_date"]."</td>";
-				echo "<td><a href=''>Sửa</a><a href=''>Xóa</a></td>";
-				echo "</tr>";
-			}
-			?>
-		</table>		
+		<a href="../message/messages.php?to=<?php echo $id?>">Tin nhan da gui</a>
 	<?php
 	}
 	?>

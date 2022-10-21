@@ -7,13 +7,16 @@ session_start();
 
 $user_sess = $_SESSION["user"];
 $toId = $_GET["to"];
-if(isset($to_id) && !empty($to_id)){
+if(isset($toId) && !empty($toId)){
+	if($toId == $user_sess["id"]){
+		die("Cannot read message sent to your own");
+	}
 	$db = new db();
 	$conn = $db->connect();
 	$msgService = new MessageService($conn);
 	$userService = new UserService($conn);
 
-	$toUser = $userService->getUserFromId($id);
+	$toUser = $userService->getUserFromId($toId);
 	if(!$toUser){
 		die("This user does not exist");
 	}
@@ -34,13 +37,17 @@ if(isset($to_id) && !empty($to_id)){
 		<tr>
 			<th>Ngay gui</th>
 			<th>Noi dung</th>
+			<th>Hanh dong</th>
 		</tr>
 		<?php
-		foreach($msgList as $msg){
-			echo "<tr>";
-			echo "<td>".$msg["create_date"]."</td>";
-			echo "<td>".$msg["content"]."</td>";
-			echo "</tr>";
+		if($msgList->rowCount() > 0){
+			foreach($msgList as $msg){
+				echo "<tr>";
+				echo "<td>".$msg["create_date"]."</td>";
+				echo "<td>".$msg["content"]."</td>";
+				echo "<td><a href='edit.php?id=".$msg["id"]."'>Sua</a><a href='delete.php?id=".$msg["id"]."'>Xoa</a></td>";
+				echo "</tr>";
+			}
 		}
 		?>
 	</table>

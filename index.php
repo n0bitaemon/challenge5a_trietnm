@@ -1,6 +1,3 @@
-<?php
-die($_GET["url"]);
-?>
 <?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
