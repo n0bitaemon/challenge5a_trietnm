@@ -1,7 +1,4 @@
-CREATE USER n0bita@localhost;
 CREATE DATABASE classroom;
-GRANT ALL PRIVILEGES ON classroom.* TO n0bita@localhost IDENTIFIED BY 'trietsuper';
-
 USE classroom;
 
 CREATE TABLE account(
@@ -15,11 +12,6 @@ CREATE TABLE account(
 	is_teacher boolean NOT NULL DEFAULT 0,
 	PRIMARY KEY(id)
 );
-
-INSERT INTO account(username, password, fullname, avatar, email, phone, is_teacher)
-VALUES
-('triet_teacher', 'trietsuper', 'Minh Triet Teacher', 'default.png', 'triet.teacher@gmail.com', '0865142336', 1),
-('triet_student', 'trietsuper', 'Minh Triet Student', 'default.png', 'triet.student@gmail.com', '0123456778', 0);
 
 CREATE TABLE quiz(
 	id INT NOT NULL AUTO_INCREMENT,

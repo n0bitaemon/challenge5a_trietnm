@@ -1,23 +1,18 @@
 <?php
 require_once("utils/exec_query.php");
-require_once("config/db.php");
-require_once("service/user.php");
 session_start();
 if($_SERVER["REQUEST_METHOD"] == "POST"){
 	$username = $_POST["username"];
 	$password = $_POST["password"];	
 
-	$db = new db();
-	$conn = $db->connect();
-	$userService = new UserService($conn);
-
-	$userLogin = $userService->getUserWithCredentials($username, $password);
-	if(!$userLogin){
+	$query = "SELECT * FROM account WHERE username='$username' AND password='$password' LIMIT 1";
+	$user = get_single_result($query);
+	if($user === -1){
 		$error = "Wrong username or password";
 	}else{
 		$user_sess = array();
-		$user_sess["id"] = $userLogin["id"];
-		$user_sess["is_teacher"] = $userLogin["is_teacher"];
+		$user_sess["id"] = $user["id"];
+		$user_sess["is_teacher"] = $user["is_teacher"];
 		$_SESSION["user"] = $user_sess;
 		die(header("Location: index.php"));
 	}

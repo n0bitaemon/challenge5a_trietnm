@@ -1,5 +1,7 @@
 <?php
 require_once("../utils/exec_query.php");
+require_once("../config/db.php");
+require_once("../service/message.php");
 session_start();
 $user_sess = $_SESSION["user"];
 
@@ -10,13 +12,12 @@ if($method == "GET"){
 	$from_id = $user_sess["id"];
 	$to_id = $_GET["id"];
 
-	$query = "SELECT * FROM message WHERE from_id=$from_id";
-	if(isset($to_id)){
-		$query = $query." AND to_id=$to_id";
-	}
-	
-	$results = get_multiple_results($query);
-	return $results;
+	$db = new db();
+	$conn = $db->connect();
+	$msgService = new MessageService($conn);
+	$msgList = $msgService->getMessagesToUser($from_id, $to_id);
+
+	return $msgList;
 }
 
 if($method == "POST"){

@@ -3,7 +3,7 @@ require_once("../auth.php");
 require_once("../utils/exec_query.php");
 require_once("../utils/utils.php");
 require_once("../config/db.php");
-require_once("../model/user.php");
+require_once("../service/user.php");
 session_start();
 
 $IMAGES_PATH = "../static/images/";
@@ -11,7 +11,7 @@ $IMAGES_PATH = "../static/images/";
 $user_sess = $_SESSION["user"];
 $id = $_GET["id"];
 if(isset($id) && $id !== $user_sess["id"]){
-	if($user_sess["is_teacher"] !== "1"){
+	if($user_sess["is_teacher"] !== 1){
 		die("You are not teacher");
 	}
 }else{
@@ -20,9 +20,8 @@ if(isset($id) && $id !== $user_sess["id"]){
 
 $db = new db();
 $conn = $db->connect();
-$user = new user($conn);
-$user->id = $id;
-$result = $user->getUserFromId();
+$userService = new UserService($conn);
+$userProfile = $userService->getUserFromId($id);
 
 if($_SERVER["REQUEST_METHOD"] == "POST"){
 	$id = $_POST["id"];
@@ -32,7 +31,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 	//Upload avatar
 	if($_FILES["avatar"]){
 		$target_file = gen_filename($IMAGES_PATH.basename($_FILES["avatar"]["name"]));
-		$filename = basename($target_file);
+		$avatar = basename($target_file);
 		$imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
 		if($_FILES["avatar"]["size"] > 500000){
@@ -46,20 +45,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 			die("Cannot upload image");
 		}
 	}else{
-		$filename = $user["avatar"];
+		$avatar = $user["avatar"];
 	}
 
-	$user_update = new user($conn);
-	$user_update->id = $id;
-	$user_update->email = $email;
-	$user_update->phone = $phone;
-	$user_update->avatar = $filename;
-	
-	$user_update->update();
-	/*
-	$query_update = "UPDATE account SET email='$email',phone='$phone',avatar='$filename' WHERE id=$id";
-	execute($query_update);
-	 */
+	$userService->update($id, $email, $phone, $avatar);
 	die(header("Location: profile.php?id=$id"));
 }
 ?>
@@ -72,12 +61,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 <body>
 	<h1>Update user</h1>
 	<form action="update.php" method="POST" enctype="multipart/form-data">
-		<input type="hidden" name="id" value="<?php echo $result['id']; ?>"> <br>
-		Username: <?php echo $result["username"]; ?><br>
-		Fullname: <?php echo $result["fullname"]; ?> <br>
-		Email: <input type="text" name="email" value="<?php echo $result['email']; ?>"> <br>
-		Số điện thoại: <input type="text" name="phone" value="<?php echo $result['phone']; ?>"> <br>
-		<img src="<?php echo $IMAGES_PATH.$result["avatar"]; ?>" alt='Hình ảnh bị lỗi' width='200' height='200'/> <br/>
+		<input type="hidden" name="id" value="<?php echo $userProfile['id']; ?>"> <br>
+		Username: <?php echo $userProfile["username"]; ?><br>
+		Fullname: <?php echo $userProfile["fullname"]; ?> <br>
+		Email: <input type="text" name="email" value="<?php echo $userProfile['email']; ?>"> <br>
+		Số điện thoại: <input type="text" name="phone" value="<?php echo $userProfile['phone']; ?>"> <br>
+		<img src="<?php echo $IMAGES_PATH.$userProfile["avatar"]; ?>" alt='Hình ảnh bị lỗi' width='200' height='200'/> <br/>
 		Change avatar: <input type="file" name="avatar"> <br/>
 		<input type="submit" value="Change">
 	</form>

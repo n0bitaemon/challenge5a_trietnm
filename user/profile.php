@@ -2,7 +2,8 @@
 require_once("../auth.php");
 require_once("../utils/exec_query.php");
 require_once("../config/db.php");
-require_once("../model/user.php");
+require_once("../service/user.php");
+require_once("../service/message.php");
 session_start();
 $IMAGES_PATH = "../static/images/";
 
@@ -14,24 +15,23 @@ if(!isset($id)){
 
 $db = new db();
 $conn = $db->connect();
-$user = new User($conn);
-$user->id = $id;
-$result = $user->getUserFromId();
+$userService = new UserService($conn);
+$msgService = new MessageService($conn);
 
-if(!$result){
+$userProfile = $userService->getUserFromId($id);
+
+if(!$userProfile){
 	die("User not found with id $id");
 }
 
 if(isset($_POST["send_msg"]) && !empty($_POST["message"])){
 	//Send message
 	$message = $_POST["message"];
-	$query = "INSERT INTO message (from_id,to_id,content) VALUES(".$user_sess["id"].",$id,'$message')";
-	execute($query);
+	$msgService->sendMessage($user_sess["id"], $id, $message);
 }
 
 //Get all messages
-$query = "SELECT * FROM message WHERE from_id=".$user_sess["id"]." AND to_id=$id";
-$messages = get_multiple_results($query);
+$msgList = $msgService->getAllMessagesToUser($user_sess["id"], $id);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,19 +42,19 @@ $messages = get_multiple_results($query);
 <body>
 	<h1>Thông tin người dùng</h1>
 	<?php
-	echo "<p>Tên đăng nhập: ".$result["username"]."</p>";
-	echo "<p>Họ và tên: ".$result["fullname"]."</p>";
-	echo "<p>Email: ".$result["email"]."</p>";
-	echo "<p>Số điện thoại: ".$result["phone"]."</p>";
-	echo "<p>Vai trò: ".($result["is_teacher"]==="1"?"Giáo viên":"Học sinh")."</p>";
-	echo "<p>Avatar: </p><img src='".$IMAGES_PATH.($result["avatar"]?$result["avatar"]:"default.png")."' alt='Hình ảnh bị lỗi' width='200' height='200'/><br/>";
-	if($id === $user_sess["id"] || $user_sess["is_teacher"] === "1"){
-		echo "<a href='update.php?id=".$result["id"]."'>Sửa</a>";
+	echo "<p>Tên đăng nhập: ".$userProfile["username"]."</p>";
+	echo "<p>Họ và tên: ".$userProfile["fullname"]."</p>";
+	echo "<p>Email: ".$userProfile["email"]."</p>";
+	echo "<p>Số điện thoại: ".$userProfile["phone"]."</p>";
+	echo "<p>Vai trò: ".($userProfile["is_teacher"]==="1"?"Giáo viên":"Học sinh")."</p>";
+	echo "<p>Avatar: </p><img src='".$IMAGES_PATH.($userProfile["avatar"]?$userProfile["avatar"]:"default.png")."' alt='Hình ảnh bị lỗi' width='200' height='200'/><br/>";
+	if($id === $user_sess["id"] || $user_sess["is_teacher"] === 1){
+		echo "<a href='update.php?id=".$userProfile["id"]."'>Sửa</a>";
 	}
-	if($user_sess["is_teacher"] === "1" && $user_sess["id"] != $id){
-		echo "<a href='delete.php?id=".$result["id"]."'>Xóa</a><br/>";
+	if($user_sess["is_teacher"] === 1 && $user_sess["id"] != $id){
+		echo "<a href='delete.php?id=".$userProfile["id"]."'>Xóa</a><br/>";
 	}
-	if($user_sess["id"] !== $result["id"]){
+	if($user_sess["id"] !== $userProfile["id"]){
 	?>
 		<form action="profile.php?id=<?php echo $id?>" method="POST">
 			<textarea name="message" cols="30" rows="10"></textarea><br/>
@@ -68,7 +68,7 @@ $messages = get_multiple_results($query);
 				<th>Hành động</th>
 			</tr>
 			<?php
-			foreach($messages as $msg){
+			foreach($msgList as $msg){
 				echo "<tr>";
 				echo "<td>".$msg["content"]."</td>";
 				echo "<td>".$msg["create_date"]."</td>";
