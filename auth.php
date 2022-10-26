@@ -1,6 +1,7 @@
 <?php
 session_start();
-if(!isset($_SESSION["user"])){
-	die("You are not logged in!");
+$userSess = $_SESSION["user"];
+if(!$userSess){
+	die(header("Location: /login.php"));
 }
 ?>

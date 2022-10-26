@@ -13,24 +13,32 @@ class MessageService{
 		$this->conn = $db;
 	}
 
-	public function getAllMessagesToUser($from_id, $to_id){
-		$query = "SELECT * FROM message WHERE from_id=:from_id AND to_id=:to_id";
+	public function getAllMessagesToUser($to_id){
+		$query = "SELECT * FROM message WHERE to_id=:to_id ORDER BY create_date DESC";
 		$stmt = $this->conn->prepare($query);
-		$stmt->execute(["from_id"=>$from_id, "to_id"=>$to_id]);
+		$stmt->execute(["to_id"=>$to_id]);
 		
 		return $stmt;
 	}
 
 	public function getAllMessagesFromUser($from_id){
-		$query = "SELECT * FROM message WHERE from_id=:from_id";	
+		$query = "SELECT * FROM message WHERE from_id=:from_id ORDER BY create_date DESC";	
 		$stmt = $this->conn->prepare($query);
 		$stmt->execute(["from_id"=>$from_id]);
 
 		return $stmt;
 	}
+
+	public function getAllMessagesFromUserToUser($from_id, $to_id){
+		$query = "SELECT * FROM message WHERE from_id=:from_id AND to_id=:to_id ORDER BY create_date DESC";
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute(["from_id"=>$from_id, "to_id"=>$to_id]);
+
+		return $stmt;
+	}
 	
 	public function getMessageFromId($id){
-		$query = "SELECT * FROM message WHERE id=:id";
+		$query = "SELECT * FROM message WHERE id=:id ORDER BY create_date DESC";
 		$stmt = $this->conn->prepare($query);
 		$stmt->execute(["id"=>$id]);
 
@@ -45,8 +53,8 @@ class MessageService{
 		return $stmt;
 	}
 
-	public function editMessage($id, $content){
-		$query = "UPDATE message SET content=:content VALUES (:content) WHERE id=:id";
+	public function updateMessage($id, $content){
+		$query = "UPDATE message SET content=:content WHERE id=:id";
 		$stmt = $this->conn->prepare($query);
 		$stmt->execute(["content"=>$content, "id"=>$id]);
 

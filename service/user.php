@@ -30,10 +30,10 @@ class UserService{
 		return $stmt->fetch();
 	}
 
-	public function create($username, $password, $fullname, $avatar, $email, $phone){
-		$query = "INSERT INTO account(username, password, fullname, avatar, email, phone) VALUES(:username, :password, :fullname, :avatar, :email, :phone)";
+	public function create($username, $password, $fullname, $email, $phone){
+		$query = "INSERT INTO account(username, password, fullname, email, phone) VALUES(:username, :password, :fullname, :email, :phone)";
 		$stmt = $this->conn->prepare($query);
-		$stmt->execute(["username"=>$username, "password"=>$password, "fullname"=>$fullname, "avatar"=>$avatar, "email"=>$email, "phone"=>$phone]);
+		$stmt->execute(["username"=>$username, "password"=>$password, "fullname"=>$fullname, "email"=>$email, "phone"=>$phone]);
 
 		return $stmt;
 	}

@@ -1,27 +1,67 @@
 <?php
 require_once("../auth.php");
-require_once("../config/db.php");
+require_once("../utils/db.php");
 require_once("../service/user.php");
-session_start();
+require_once("../service/quiz.php");
+require_once("../service/exercise.php");
+require_once("../service/message.php");
+require_once("../utils/const.php");
 
-$user_sess = $_SESSION["user"];
-$id = $_GET["id"];
-if(isset($id) && !empty($id)){
-	if($user_sess["is_teacher"] !== 1){
-		die("You are not teacher");
-	}else{
-		if($id === $user_sess["id"]){
-			die("You can not delete your own account");
-		}
-	}
-}else{
-	die("No id specified");
+if($userSess["is_teacher"] !== 1){
+	returnErrorPage(401);
+}
+
+$userId = $_GET["id"];
+if(!isset($userId)){
+	returnErrorPage(400);
 }
 
 $db = new db();
 $conn = $db->connect();
 $userService = new UserService($conn);
-$userService->delete($id);
+$quizService = new QuizService($conn);
+$exService = new ExerciseService($conn);
+$msgService = new MessageService($conn);
 
-die(header("Location: ../class/members.php"));
+$userDelete = $userService->getUserFromId($userId);
+if(!$userDelete){
+	returnErrorPage(409);
+}
+if($userId == $userSess["id"]){
+	returnErrorPage(409);
+}
+if($userDelete["is_teacher"] === 1){
+	returnErrorPage(409);
+}
+
+//Delete all messages
+$msgFromList = $msgService->getAllMessagesFromUser($userId);
+foreach($msgFromList as $msg){
+	$msgService->deleteMessage($msg["id"]);
+}
+$msgToList = $msgService->getAllMessagesToUser($userId);
+foreach($msgToList as $msg){
+	$msgService->deleteMessage($msg["id"]);
+}
+
+//Delete all exercise answers
+$exList = $exService->getAllAnswersFromUser($userId);
+foreach($exList as $ex){
+	$exService->deleteAnswer($ex["id"]);
+}
+
+//Delete all quiz answers
+$quizList = $quizService->getAllAnswersFromUser($userId);
+foreach($quizList as $quiz){
+	$quizService->deleteAnswer($quiz["id"]);
+}
+
+//Delete user
+$userService->delete($userId);
+
+//Delete avatar
+$userAvatar = FILE_AVATAR_PATH.$userDelete["avatar"];
+unlink($userAvatar);
+
+die(header("Location: /user"));
 ?>

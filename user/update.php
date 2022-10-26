@@ -1,74 +1,181 @@
 <?php
 require_once("../auth.php");
-require_once("../utils/exec_query.php");
 require_once("../utils/utils.php");
-require_once("../config/db.php");
+require_once("../utils/db.php");
 require_once("../service/user.php");
-session_start();
-
-$IMAGES_PATH = "../static/images/";
-
-$user_sess = $_SESSION["user"];
-$id = $_GET["id"];
-if(isset($id) && $id !== $user_sess["id"]){
-	if($user_sess["is_teacher"] !== 1){
-		die("You are not teacher");
-	}
-}else{
-	$id = $user_sess["id"];
-}
+require_once("../utils/const.php");
 
 $db = new db();
 $conn = $db->connect();
 $userService = new UserService($conn);
-$userProfile = $userService->getUserFromId($id);
+
+if($_SERVER["REQUEST_METHOD"] == "GET"){
+    $id = $_GET["id"];
+    if(isset($id) && $id != $userSess["id"]){
+        if($userSess["is_teacher"] !== 1){
+            returnErrorPage(400);
+        }
+    }else{
+        $id = $userSess["id"];
+    }
+
+    $userUpdate = $userService->getUserFromId($id);
+    if(!$userUpdate){
+        returnErrorPage(409);
+    }
+
+    $username = $userUpdate["username"];
+    $fullname = $userUpdate["fullname"];
+    $email = $userUpdate["email"];
+    $phone = $userUpdate["phone"];
+    $avatar = $userUpdate["avatar"];
+}
 
 if($_SERVER["REQUEST_METHOD"] == "POST"){
+    $isError = false;
+
 	$id = $_POST["id"];
-	$email = $_POST["email"];
-	$phone = $_POST["phone"];
+    $username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
+    $fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
+	$email = htmlspecialchars($_POST["email"], ENT_QUOTES, "UTF-8");
+	$phone = htmlspecialchars($_POST["phone"], ENT_QUOTES, "UTF-8");
+    $urlAvatar = $_POST["url_avatar"];
+
+    if($id != $userSess["id"] && $userSess["is_teacher"] !== 1){
+        returnErrorPage(400);
+    }
+
+    $userUpdate = $userService->getUserFromId($id);
+    if(!$userUpdate){
+        returnErrorPage(409);
+    }
+
+    if(!isset($fullname) || empty($fullname)){
+        $isError = true;
+        $emptyFullNameErr = "Họ tên không được trống";
+    }else if(!isset($username) || empty($username)){
+        $isError = true;
+        $emptyUsrErr = "Username không được trống";
+    }else{
+        if($userSess["is_teacher"] !== 1){
+            returnErrorPage(401);
+        }
+    }
+
+    $avatar = $userUpdate["avatar"];
+    if($isError === false){
+        if(isset($urlAvatar) && !empty($urlAvatar)){
+            $targetFile = genFileName(FILE_AVATAR_PATH."avatar.jpg");
+            $imgContent = file_get_contents($urlAvatar);
+            if(!file_put_contents($targetFile, $imgContent)){
+                $isError = true;
+                $uploadFileFromUrlErr = "Lỗi khi upload file từ URL";
+            }else{
+                $avatar = basename($targetFile);
+                if($userUpdate["avatar"]){
+                    unlink(FILE_AVATAR_PATH.$userUpdate["avatar"]);
+                }
+            }
+        }else{
+            //Upload avatar
+            if(file_exists($_FILES["avatar"]["tmp_name"]) && is_uploaded_file($_FILES["avatar"]["tmp_name"])){
+                $targetFile = genFileName(FILE_AVATAR_PATH.basename($_FILES["avatar"]["name"]));
+                $avatar = basename($targetFile);
+                $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+    
+                if($fileType != "jpg" && $fileType != "jpeg" && $fileType != "png"){
+                    $isError = true;
+                    $invalidFileTypeErr = "Định dạng file phải là jpg, jpeg hoặc png";
+                }
+                
+                if($isError === false){
+                    if(!move_uploaded_file($_FILES["avatar"]["tmp_name"], $targetFile)){
+                        $isError = true;
+                        $uploadFileErr = "Lỗi khi upload file";
+                    }else{
+                        if($userUpdate["avatar"]){
+                            unlink(FILE_AVATAR_PATH.$userUpdate["avatar"]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 		
-	//Upload avatar
-	if($_FILES["avatar"]){
-		$target_file = gen_filename($IMAGES_PATH.basename($_FILES["avatar"]["name"]));
-		$avatar = basename($target_file);
-		$imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
-		if($_FILES["avatar"]["size"] > 500000){
-			die("File too large");
-		}
-		if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif"){
-			die("File is not image");
-		}
-
-		if(!move_uploaded_file($_FILES["avatar"]["tmp_name"], $target_file)){
-			die("Cannot upload image");
-		}
-	}else{
-		$avatar = $user["avatar"];
-	}
-
-	$userService->update($id, $email, $phone, $avatar);
-	die(header("Location: profile.php?id=$id"));
+    if($isError === false){
+        $userService->update($id, $email, $phone, $avatar);
+        die(header("Location: profile.php?id=$id"));
+    }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<title></title>
+    <?php require_once("../layout/head.php") ?>
+    <title>Document</title>
 </head>
+
 <body>
-	<h1>Update user</h1>
-	<form action="update.php" method="POST" enctype="multipart/form-data">
-		<input type="hidden" name="id" value="<?php echo $userProfile['id']; ?>"> <br>
-		Username: <?php echo $userProfile["username"]; ?><br>
-		Fullname: <?php echo $userProfile["fullname"]; ?> <br>
-		Email: <input type="text" name="email" value="<?php echo $userProfile['email']; ?>"> <br>
-		Số điện thoại: <input type="text" name="phone" value="<?php echo $userProfile['phone']; ?>"> <br>
-		<img src="<?php echo $IMAGES_PATH.$userProfile["avatar"]; ?>" alt='Hình ảnh bị lỗi' width='200' height='200'/> <br/>
-		Change avatar: <input type="file" name="avatar"> <br/>
-		<input type="submit" value="Change">
-	</form>
+    <?php require_once("../layout/navbar.php") ?>
+    <section class="content">
+        <div class="container">
+            <div class="row d-flex justify-content-center">
+                <div class="col-12 mb-3">
+                    <h1>Thay đổi thông tin</h1>
+                </div>
+                <div class="col-12">
+                    <form action="update.php" method="POST" enctype="multipart/form-data" class="form-block">
+                        <div class="row g-3">
+                            <input name="id" type="hidden" value="<?php echo $userUpdate['id'] ?>">
+                            <?php if($userSess["is_teacher"] === 1){ ?>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userFullName" class="form-label">Họ tên</label>
+                                <input name="fullname" type="text" value="<?php echo $userUpdate["fullname"] ?>" class="form-control" id="userFullName" placeholder="Nguyễn Văn A">
+                                <p class="text-danger validate-err"><?php echo $emptyFullNameErr ?></p>
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userUsername" class="form-label">Tên đăng nhập</label>
+                                <input name="username" type="text" value="<?php echo $userUpdate["username"] ?>" class="form-control" id="userUsername">
+                                <p class="text-danger validate-err"><?php echo $emptyUsrErr ?></p>
+                            </div>
+                            <?php } ?>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userEmail" class="form-label">Email</label>
+                                <input name="email" type="email" value="<?php echo $email ?>" class="form-control" id="userEmail" placeholder="abc@example.com">
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userPhone" class="form-label">Số điện thoại</label>
+                                <input name="phone" type="tel" value="<?php echo $phone ?>" class="form-control" id="userPhone" placeholder="0123456789">
+                            </div>
+                            <div class="col-12">
+                                <label for="userAvatar" class="form-label">Upload avatar</label>
+                                <input name="avatar" type="file" class="form-control" id="userAvatar" accept="image/*">
+                                <p class="text-danger validate-err"><?php echo $invalidFileTypeErr ?></p>
+                                <p class="text-danger validate-err"><?php echo $uploadFileErr ?></p>
+                                <label for="urlAvatar" class="form-label mt-3">Upload avatar from url</label>
+                                <input name="url_avatar" type="text" class="form-control" id="urlAvatar">
+                                <p class="text-danger validate-err"><?php echo $uploadFileFromUrlErr ?></p>
+                                <div class="figure">
+                                    <img style="width: 200px;" src="<?php echo FILE_AVATAR_PATH.$userUpdate['avatar'] ?>" alt="Không thể hiển thị hình ảnh" class="my-3 rounded">
+                                    <figcaption class="figure-caption text-center">Avatar hiện tại</figcaption>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-5">
+                                <input type="submit" value="Cập nhật" class="btn btn-outline-success">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+
+    </script>
 </body>
-</htl>
+
+</html>

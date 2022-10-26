@@ -2,66 +2,109 @@
 require_once("../auth.php");
 require_once("../utils/utils.php");
 require_once("../service/user.php");
-require_once("../config/db.php");
+require_once("../utils/db.php");
+require_once("../utils/const.php");
 session_start();
-$IMAGES_PATH = "../static/images/";
+
 $user_sess = $_SESSION["user"];
 if($user_sess["is_teacher"] !== 1){
-	die(require_once("../error/401.php"));
+	returnErrorPage(401);
 }
 if($_SERVER["REQUEST_METHOD"] == "POST"){
-	$username = $_POST["username"];
+    $isError = false;
+
+	$username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
 	$password = $_POST["password"];
-	$fullname = $_POST["fullname"];
-	$email = $_POST["email"];
-	$phone = $_POST["phone"];
+    $rePassword = $_POST["repassword"];
+	$fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
+	$email = htmlspecialchars($_POST["email"], ENT_QUOTES, "UTF-8");
+	$phone = htmlspecialchars($_POST["phone"], ENT_QUOTES, "UTF-8");
 
-	//Upload avatar
-	if($_FILES["avatar"]){
-		$target_file = gen_filename($IMAGES_PATH.basename($_FILES["avatar"]["name"]));
-		$avatar = basename($target_file);
-		$imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    //Validate
+    if(!isset($fullname) || empty($fullname)){
+        $isError = true;
+        $emptyFullNameErr = "Họ tên không được trống";
+    }else if(!isset($username) || empty($username)){
+        $isError = true;
+        $emptyUsrErr = "Tên đăng nhập không được trống";
+    }else if(!isset($password) || empty($password)){
+        $isError = true;
+        $emptyPwdErr = "Mật khẩu không được trống"; 
+    }else if($password !== $rePassword){
+        $isError = true;
+        $notMatchPwdErr = "Mật khẩu không khớp";
+    }
 
-		if($_FILES["avatar"]["size"] > 500000){
-			die("File too large");
-		}
-		if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif"){
-			die("File is not image");
-		}
+	if($isError === false){
+        //Config query
+        $db = new db();
+        $conn = $db->connect();		
+        $userService = new UserService($conn);
 
-		if(!move_uploaded_file($_FILES["avatar"]["tmp_name"], $target_file)){
-			die("Cannot upload image");
-		}
-
-	}else{
-		$avatar = "default.png";
-	}
-
-	//Config query
-	$db = new db();
-	$conn = $db->connect();		
-	$userService = new UserService($conn);
-
-	$userService->create($username, $password, $fullname, $avatar, $email, $phone);
-	die(header("Location: ../class/members.php"));
+        $userService->create($username, md5($password), $fullname, $email, $phone);
+        die(header("Location: /user"));
+    }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<title></title>
+    <?php require_once("../layout/head.php") ?>
+    <title>Document</title>
 </head>
+
 <body>
-	<h1>Tạo người dùng mới</h1>
-	<form action="create.php" method="POST" enctype="multipart/form-data">
-		Tên đăng nhập: <input type="text" name="username"> <br/>
-		Mật khẩu: <input type="password" name="password"> <br/>
-		Họ tên: <input type="text" name="fullname"> <br/>
-		Email: <input type="email" name="email"> <br/>
-		Số điện thoại: <input type="tel" name="phone" pattern="[0-9]{10}"> <br/>
-		Avatar: <input type="file" name="avatar"> <br/>
-		<input type="submit" value="Tạo mới">
-	</form>
+    <?php require_once("../layout/navbar.php") ?>
+
+    <section class="content">
+        <div class="container">
+            <div class="row d-flex justify-content-center">
+                <div class="col-12 mb-3">
+                    <h1>Thêm học sinh mới</h1>
+                </div>
+                <div class="col-12">
+                    <form action="create.php" method="POST" enctype="multipart/form-data" class="form-block">
+                        <div class="row g-3">
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userFullname" class="form-label">Họ tên</label>
+                                <input name="fullname" type="text" value="<?php echo $fullname ?>" class="form-control" id="userFullname" placeholder="Nguyễn Văn A">
+                                <p class="text-danger validate-err"><?php echo $emptyFullNameErr ?></p>
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userUsername" class="form-label">Tên đăng nhập</label>
+                                <input name="username" type="text" value="<?php echo $username ?>" class="form-control" id="userUsername">
+                                <p class="text-danger validate-err"><?php echo $emptyUsrErr ?></p>
+                            </div>
+                            <div class="col-12">
+                                <label for="userPassword" class="form-label">Mật khẩu</label>
+                                <input name="password" type="password" class="form-control" id="userPassword">
+                                <p class="text-danger validate-err"><?php echo $emptyPwdErr ?></p>
+                            </div>
+                            <div class="col-12">
+                                <label for="userRepassword" class="form-label">Nhập lại mật khẩu</label>
+                                <input name="repassword" type="password" class="form-control" id="userRepassword">
+                                <p class="text-danger validate-err"><?php echo $emptyRePwdErr ?></p>
+                                <p class="text-danger validate-err"><?php echo $notMatchPwdErr ?></p>
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userEmail" class="form-label">Email</label>
+                                <input name="email" type="email" value="<?php echo $email ?>" class="form-control" id="userEmail" placeholder="abc@example.com">
+                            </div>
+                            <div class="col-md-6 col-sm-12">
+                                <label for="userPhone" class="form-label">Số điện thoại</label>
+                                <input name="phone" type="tel" value="<?php echo $phone ?>" class="form-control" id="userPhone" placeholder="0123456789">
+                            </div>
+                            <div class="col-12 mb-5">
+                                <input type="submit" value="Tạo mới" class="btn btn-outline-success">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
 </body>
+
 </html>
