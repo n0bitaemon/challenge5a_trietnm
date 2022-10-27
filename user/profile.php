@@ -111,7 +111,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                     </tr>
                                 </tbody>
                             </table>
-                            <?php if($userSess["is_teacher"] === 1 || $userSess["id"] === $id){ ?>
+                            <?php if($userSess["is_teacher"] === 1 || $userSess["id"] == $id){ ?>
                             <a href="update.php?id=<?php echo $userProfile['id'] ?>" class="btn btn-outline-primary">Thay đổi</a>
                             <?php if($userSess["is_teacher"] === 1 && $userSess["id"] != $id && $userProfile["is_teacher"] !== 1){ ?>
                             <a class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Xóa</a>

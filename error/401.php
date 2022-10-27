@@ -11,7 +11,7 @@
 
     <section class="content">
         <div class="container-lg">
-            <h1>Error 404 - Unauthorized</h1>
+            <h1>Error 401 - Unauthorized</h1>
         </div>
     </section>
 </body>

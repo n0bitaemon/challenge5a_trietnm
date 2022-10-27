@@ -33,34 +33,35 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
 
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $isError = false;
-
 	$id = $_POST["id"];
-    $username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
-    $fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
+
+	if($id != $userSess["id"] && $userSess["is_teacher"] !== 1){
+		returnErrorPage(401);
+	}
+
+	$userUpdate = $userService->getUserFromId($id);
+	if(!$userUpdate){
+		returnErrorPage(409);
+	}
+
+	$username = $userUpdate["username"];
+	$password = $userUpdate["password"];
 	$email = htmlspecialchars($_POST["email"], ENT_QUOTES, "UTF-8");
 	$phone = htmlspecialchars($_POST["phone"], ENT_QUOTES, "UTF-8");
     $urlAvatar = $_POST["url_avatar"];
 
-    if($id != $userSess["id"] && $userSess["is_teacher"] !== 1){
-        returnErrorPage(400);
-    }
-
-    $userUpdate = $userService->getUserFromId($id);
-    if(!$userUpdate){
-        returnErrorPage(409);
-    }
-
-    if(!isset($fullname) || empty($fullname)){
-        $isError = true;
-        $emptyFullNameErr = "Họ tên không được trống";
-    }else if(!isset($username) || empty($username)){
-        $isError = true;
-        $emptyUsrErr = "Username không được trống";
-    }else{
-        if($userSess["is_teacher"] !== 1){
-            returnErrorPage(401);
-        }
-    }
+	if($userSess["is_teacher"] === 1){
+		if(!isset($fullname) || empty($fullname)){
+			$isError = true;
+			$emptyFullNameErr = "Họ tên không được trống";
+		}else if(!isset($username) || empty($username)){
+			$isError = true;
+			$emptyUsrErr = "Username không được trống";
+		}else{
+			$username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
+    		$fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
+		}
+	}
 
     $avatar = $userUpdate["avatar"];
     if($isError === false){

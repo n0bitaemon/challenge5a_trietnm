@@ -18,6 +18,7 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
     }
 
     $exDetail = $exService->getExerciseFromId($exId);
+	$exAnswer = $exService->getAnswerFromUser($userSess["id"], $exId);
     $exCreator = $userService->getUserFromId($exDetail["creator"]);
 
     //If user is student, then $exAnswer is his answer
@@ -27,14 +28,13 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
     $userId = $_POST["user_id"];
     $exId = $_POST["exercise_id"];
 
+	$exDetail = $exService->getExerciseFromId($exId);
     $exAnswer = $exService->getAnswerFromUser($userId, $exId);
-    if(!$exAnswer){
-        returnErrorPage(404);
-    }
 
     if(isset($_POST["submit_ans"])){
-        //Submit Answer
-        if($_FILES["file"]){
+		//Submit answer
+		$ansFile = $exAnswer["ans_file"];
+        if(file_exists($_FILES["file"]["tmp_name"]) && is_uploaded_file($_FILES["file"]["tmp_name"])){
             $targetFile = genFileName(FILE_EX_PATH.basename($_FILES["file"]["name"]));
             $ansFile = basename($targetFile);
             $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
@@ -49,8 +49,12 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
                 $uploadFileErr = "Lỗi khi upload file";
             }
         }else{
-            $isError = true;
-            $emptyFileErr = "Không có file nào được chọn";
+			if($exAnswer){
+				$ansFile = $exAnswer["ans_file"];
+			}else{
+            	$isError = true;
+            	$emptyFileErr = "Không có file nào được chọn";
+			}
         }
 
         if($isError === false){
@@ -135,14 +139,14 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
                                         <p class="d-inline-block text-success m-0"><?php echo $exAnswer && $exAnswer["is_done"] === 1 ? "Hoàn thành" : "Đã giao" ?></p>
                                     </div>
                                     <div class="d-grid gap-2 mt-3">
-                                        <form action="detail.php" method="POST" enctype="multipart/form-data">
+                                        <form method="POST" enctype="multipart/form-data">
                                             <input name="user_id" value="<?php echo $userSess['id'] ?>" type="hidden">
                                             <input name="exercise_id" value="<?php echo $exId ?>" type="hidden">
                                             <?php if(!$exAnswer || $exAnswer["is_done"] === 0){ ?>
                                                 <?php if($exAnswer["ans_file"]){ ?>
                                                 <div class="card mb-2">
                                                     <div class="card-body p-0">
-                                                    <a class="d-block p-2 text-center" href="download.php?file=<?php echo $exDetail['file'] ?>"><?php echo getFileName(FILE_EX_PATH.$exDetail["file"])?></a>
+                                                    <a class="d-block p-2 text-center" href="download.php?file=<?php echo $exAnswer['ans_file'] ?>"><?php echo getFileName(FILE_EX_PATH.$exAnswer["ans_file"])?></a>
                                                     </div>
                                                 </div>
                                                 <?php }else{ ?>
@@ -156,11 +160,11 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
                                                 <div class="col-12 mb-3 py-1">
                                                     <div class="card">
                                                         <div class="card-body p-0">
-                                                            <a class="d-block p-3" href="download.php?file=<?php echo $exAnswer['ans_file'] ?>"><?php echo $exAnswer["ans_file"]?></a>
+                                                            <a class="d-block p-3" href="download.php?file=<?php echo $exAnswer['ans_file'] ?>"><?php echo getFileName($exAnswer["ans_file"]) ?></a>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <form action="detail.php" method="POST">
+                                                <form method="POST">
                                                     <input name="user_id" value="<?php echo $userSess['id'] ?>" type="hidden">
                                                     <input name="exercise_id" value="<?php echo $exId ?>" type="hidden">
                                                     <input name='cancle_ans' value='Hủy nộp bài' type='submit' class='btn btn-danger'>
