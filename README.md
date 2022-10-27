@@ -42,7 +42,7 @@ create table quiz(
     description varchar(255),
     hint varchar(255) not null,
     file varchar(255) not null,
-    creator id int not null,
+    creator int not null,
     create_date date not null default curdate(),
     end_date datetime not null,
     published boolean not null default 0,
@@ -71,3 +71,10 @@ create table message(
     foreign key(from_id) references account(id),
     foreign key(to_id) references account(id)
 );
+
+insert into account(username, password, fullname, is_teacher)
+values
+('teacher1', 'f83e69e4170a786e44e3d32a2479cce9', 'Teacher NumberOne', 1),
+('teacher2', 'f83e69e4170a786e44e3d32a2479cce9', 'Teacher NumberTwo', 1),
+('student1', 'f83e69e4170a786e44e3d32a2479cce9', 'Student NumberOne', 0),
+('student2', 'f83e69e4170a786e44e3d32a2479cce9', 'Student NumberOne', 0)
