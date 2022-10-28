@@ -16,17 +16,18 @@ $msgService = new MessageService($conn);
 $quizService = new QuizService($conn);
 $exService = new Exerciseservice($conn);
 
-if($_SERVER["REQUEST_METHOD"] == "GET"){
-    $id = $_GET["id"];
-    if(!isset($id)){
-        $id = $userSess["id"];
-    }
+$id = $_GET["id"];
+if(!isset($id)){
+    $id = $userSess["id"];
+}
 
-    //Get user profile
-    $userProfile = $userService->getUserFromId($id);
-    if(!$userProfile){
-        returnErrorPage(409);
-    }
+//Get user profile
+$userProfile = $userService->getUserFromId($id);
+if(!$userProfile){
+    returnErrorPage(409);
+}
+
+if($_SERVER["REQUEST_METHOD"] == "GET"){
 
     $published = 1;
 
@@ -112,7 +113,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 </tbody>
                             </table>
                             <?php if($userSess["is_teacher"] === 1 || $userSess["id"] == $id){ ?>
-                            <a href="update.php?id=<?php echo $userProfile['id'] ?>" class="btn btn-outline-primary">Thay đổi</a>
+                            <a href="update.php?id=<?php echo $userProfile['id'] ?>" class="btn btn-outline-success">Thay đổi</a>
+                            <a href="change-pwd.php<?php echo $userProfile['id']===$userSess['id'] ? '' : '?id='.$userProfile['id'] ?>" class="btn btn-outline-primary">Đổi mật khẩu</a>
                             <?php if($userSess["is_teacher"] === 1 && $userSess["id"] != $id && $userProfile["is_teacher"] !== 1){ ?>
                             <a class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Xóa</a>
                             <?php } } ?>

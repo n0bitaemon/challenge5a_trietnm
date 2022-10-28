@@ -54,5 +54,13 @@ class UserService{
 		return $stmt;
 	}
 
+	public function changePassword($id, $newPass){
+		$query = "UPDATE account SET password=:pwd WHERE id=:id";
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute(["pwd"=>$newPass, "id"=>$id]);
+
+		return $stmt;
+	}
+
 }
 ?>

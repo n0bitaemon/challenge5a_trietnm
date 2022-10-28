@@ -45,7 +45,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 	}
 
 	$username = $userUpdate["username"];
-	$password = $userUpdate["password"];
+	$fullname = $userUpdate["fullname"];
 	$email = htmlspecialchars($_POST["email"], ENT_QUOTES, "UTF-8");
 	$phone = htmlspecialchars($_POST["phone"], ENT_QUOTES, "UTF-8");
     $urlAvatar = $_POST["url_avatar"];
