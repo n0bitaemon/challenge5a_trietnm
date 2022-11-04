@@ -34,34 +34,35 @@ if($_SERVER["REQUEST_METHOD"] == "GET"){
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $isError = false;
 	$id = $_POST["id"];
+    
+    if($id != $userSess["id"] && $userSess["is_teacher"] !== 1){
+        returnErrorPage(401);
+    }
 
-	if($id != $userSess["id"] && $userSess["is_teacher"] !== 1){
-		returnErrorPage(401);
-	}
+    $userUpdate = $userService->getUserFromId($id);
+    if(!$userUpdate){
+        returnErrorPage(409);
+    }
 
-	$userUpdate = $userService->getUserFromId($id);
-	if(!$userUpdate){
-		returnErrorPage(409);
-	}
-
-	$username = $userUpdate["username"];
-	$fullname = $userUpdate["fullname"];
+    $username = $userUpdate["username"];
+    $fullname = $userUpdate["password"];
 	$email = htmlspecialchars($_POST["email"], ENT_QUOTES, "UTF-8");
 	$phone = htmlspecialchars($_POST["phone"], ENT_QUOTES, "UTF-8");
     $urlAvatar = $_POST["url_avatar"];
 
-	if($userSess["is_teacher"] === 1){
-		if(!isset($fullname) || empty($fullname)){
-			$isError = true;
-			$emptyFullNameErr = "Họ tên không được trống";
-		}else if(!isset($username) || empty($username)){
-			$isError = true;
-			$emptyUsrErr = "Username không được trống";
-		}else{
-			$username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
-    		$fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
-		}
-	}
+
+    if($userSess["is_teacher"] === 1){
+        if(!isset($fullname) || empty($fullname)){
+            $isError = true;
+            $emptyFullNameErr = "Họ tên không được trống";
+        }else if(!isset($username) || empty($username)){
+            $isError = true;
+            $emptyUsrErr = "Username không được trống";
+        }else{
+            $username = htmlspecialchars($_POST["username"], ENT_QUOTES, "UTF-8");
+            $fullname = htmlspecialchars($_POST["fullname"], ENT_QUOTES, "UTF-8");
+        }
+    }
 
     $avatar = $userUpdate["avatar"];
     if($isError === false){
@@ -123,7 +124,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
 <head>
     <?php require_once("../layout/head.php") ?>
-    <title>Document</title>
+    <title>Thay đổi thông tin</title>
 </head>
 
 <body>
@@ -160,11 +161,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             </div>
                             <div class="col-12">
                                 <label for="userAvatar" class="form-label">Upload avatar</label>
-                                <input name="avatar" type="file" class="form-control" id="userAvatar" accept="image/*">
+                                <input name="avatar" onchange="toggleInput()" type="file" class="form-control" id="userAvatar" accept="image/*">
                                 <p class="text-danger validate-err"><?php echo $invalidFileTypeErr ?></p>
                                 <p class="text-danger validate-err"><?php echo $uploadFileErr ?></p>
                                 <label for="urlAvatar" class="form-label mt-3">Upload avatar from url</label>
-                                <input name="url_avatar" type="text" class="form-control" id="urlAvatar">
+                                <input name="url_avatar" onchange="toggleInput()" type="text" class="form-control" id="urlAvatar">
                                 <p class="text-danger validate-err"><?php echo $uploadFileFromUrlErr ?></p>
                                 <p class="text-danger validate-err"><?php echo $urlNotImageErr ?></p>
                                 <div class="figure">
@@ -183,7 +184,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     </section>
 
     <script>
-
+        function toggleInput(){
+            let fileAvatarInput = document.querySelectorAll('input[name="avatar"]')[0];
+            let urlAvatarInput = document.querySelectorAll('input[name="url_avatar"]')[0];
+            
+            fileAvatarInput.disabled = urlAvatarInput.value ? true : false;
+            urlAvatarInput.disabled = fileAvatarInput.value ? true : false;
+        }
     </script>
 </body>
 
