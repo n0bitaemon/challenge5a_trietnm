@@ -66,15 +66,22 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     $avatar = $userUpdate["avatar"];
     if($isError === false){
         if(isset($urlAvatar) && !empty($urlAvatar)){
-            $targetFile = genFileName(FILE_AVATAR_PATH."avatar.jpg");
-            $imgContent = file_get_contents($urlAvatar);
-            if(!file_put_contents($targetFile, $imgContent)){
+            if(getimagesize($urlAvatar) == false){
                 $isError = true;
-                $uploadFileFromUrlErr = "Lỗi khi upload file từ URL";
-            }else{
-                $avatar = basename($targetFile);
-                if($userUpdate["avatar"]){
-                    unlink(FILE_AVATAR_PATH.$userUpdate["avatar"]);
+                $urlNotImageErr = "URL không phải hình ảnh";
+            }
+            if($isError === false){
+                $extension = getimagesize($urlAvatar)[2];
+                $targetFile = genFileName(FILE_AVATAR_PATH."avatar".$extension);
+                $imgContent = file_get_contents($urlAvatar);
+                if(!file_put_contents($targetFile, $imgContent)){
+                    $isError = true;
+                    $uploadFileFromUrlErr = "Lỗi khi upload file từ URL";
+                }else{
+                    $avatar = basename($targetFile);
+                    if($userUpdate["avatar"]){
+                        unlink(FILE_AVATAR_PATH.$userUpdate["avatar"]);
+                    }
                 }
             }
         }else{
@@ -159,6 +166,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                                 <label for="urlAvatar" class="form-label mt-3">Upload avatar from url</label>
                                 <input name="url_avatar" type="text" class="form-control" id="urlAvatar">
                                 <p class="text-danger validate-err"><?php echo $uploadFileFromUrlErr ?></p>
+                                <p class="text-danger validate-err"><?php echo $urlNotImageErr ?></p>
                                 <div class="figure">
                                     <img style="width: 200px;" src="<?php echo FILE_AVATAR_PATH.$userUpdate['avatar'] ?>" alt="Không thể hiển thị hình ảnh" class="my-3 rounded">
                                     <figcaption class="figure-caption text-center">Avatar hiện tại</figcaption>
